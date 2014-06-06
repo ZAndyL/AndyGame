@@ -4,11 +4,14 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -52,20 +55,26 @@ public class MainActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.onPause();
 		
-		SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-		SharedPreferences.Editor editor = preferences.edit();
+		// add save states later
+		//SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+		//SharedPreferences.Editor editor = preferences.edit();
 		
 		
 	}
 	
+	
 	private class MainGameView extends SurfaceView implements
-			SurfaceHolder.Callback {
+			SurfaceHolder.Callback, SensorEventListener{
 
 		private final SurfaceHolder mSurfaceHolder;
 		private final Paint mPainter = new Paint();
 		private Thread mDrawingThread;
 		private final DisplayMetrics mDisplay;
 		private final int mDisplayWidth, mDisplayHeight;
+		
+		SensorManager sensorManager;
+		Sensor accelerometer;
+		Sensor magneticField;
 		
 		// sound stuff
 		private SoundPool soundPool;
@@ -177,6 +186,16 @@ public class MainActivity extends Activity {
 		@Override
 		public void surfaceCreated(SurfaceHolder holder) {
 
+			sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+			
+			accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+			magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+			
+			sensorManager.registerListener(this, accelerometer,
+					SensorManager.SENSOR_DELAY_GAME);
+			sensorManager.registerListener(this, magneticField,
+					SensorManager.SENSOR_DELAY_GAME);
+			
 			if (mDrawingThread == null) {
 				mDrawingThread = new Thread(new Runnable() {
 					public void run() {
@@ -191,6 +210,10 @@ public class MainActivity extends Activity {
 								// temp reset x after exiting screen
 								if (young_link.getX() > mDisplayWidth) {
 									young_link.setX(0);
+								}
+								
+								else if (young_link.getX() < 0){
+									young_link.setX(mDisplayWidth);
 								}
 
 								// update frames and draw
@@ -230,6 +253,37 @@ public class MainActivity extends Activity {
 		public void surfaceDestroyed(SurfaceHolder holder) {
 			if (null != mDrawingThread)
 				mDrawingThread.interrupt();
+		}
+
+		
+		 
+		 
+		@Override
+		public void onAccuracyChanged(Sensor arg0, int arg1) {
+			// TODO Auto-generated method stub
+		}
+
+		private float[] mGravity;
+		private float[] mGeomagnetic;
+		@Override
+		public void onSensorChanged(SensorEvent se) {
+
+		    if (se.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+		      mGravity = se.values;
+		    if (se.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+		      mGeomagnetic = se.values;
+		    if (mGravity != null && mGeomagnetic != null) {
+		      float R[] = new float[9];
+		      float I[] = new float[9];
+		      boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+		      if (success&& !young_link.isGrounded()) {
+		        float orientation[] = new float[3];
+		        SensorManager.getOrientation(R, orientation);
+		        young_link.setX(young_link.getX() + 2*Math.round(orientation[2]));
+		        young_link.setY(young_link.getY() - 2*Math.round(orientation[1]));
+		        
+		      }
+		    }			
 		}
 
 	}

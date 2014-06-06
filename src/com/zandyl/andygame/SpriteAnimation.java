@@ -31,7 +31,7 @@ public class SpriteAnimation {
 	private int accelY = 5;
 	private int maxVelY = 50;
 	
-	private int velX = 10;
+	private int velX = 5;
 	private int accelX = 0;
 	
 	public SpriteAnimation(Bitmap groundedBitmap, Bitmap arialBitmap, int x, int y, int fps, int numFramesG, int numFramesA){
