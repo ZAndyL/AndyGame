@@ -62,6 +62,11 @@ public class MainActivity extends Activity {
 		
 	}
 	
+	@Override
+	protected void onResume() {
+		super.onResume();
+	}
+	
 	
 	private class MainGameView extends SurfaceView implements
 			SurfaceHolder.Callback, SensorEventListener{
@@ -175,7 +180,7 @@ public class MainActivity extends Activity {
 			soundID = soundPool.load(getApplicationContext(), R.raw.oddbounce,
 					1);
 		}
-
+		
 		@Override
 		public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2,
 				int arg3) {
@@ -253,6 +258,8 @@ public class MainActivity extends Activity {
 		public void surfaceDestroyed(SurfaceHolder holder) {
 			if (null != mDrawingThread)
 				mDrawingThread.interrupt();
+			
+			sensorManager.unregisterListener(gameView);
 		}
 
 		
